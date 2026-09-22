@@ -192,13 +192,19 @@ alter table public.accessories enable row level security;
 alter table public.job_sites enable row level security;
 alter table public.contractors enable row level security;
 alter table public.permissions enable row level security;
-alter table public.settings enable row level security;
+alter table public.accessory_prices enable row level security;
+alter table public.audit_log enable row level security;
+alter table public.import_logs enable row level security;
 
--- Function to get current user role
+-- Function to get current user role with secure search_path
 create or replace function public.current_user_role()
 returns user_role as $$
   select role from public.profiles where id = auth.uid();
-$$ language sql stable security definer;
+$$ language sql stable security definer set search_path = public;
+
+-- Revoke direct anon API execution on security definer functions
+revoke execute on function public.current_user_role() from public, anon;
+grant execute on function public.current_user_role() to authenticated;
 
 -- PROFILES POLICIES
 create policy "Users can view active profiles" on public.profiles
@@ -229,14 +235,85 @@ create policy "Installers edit draft or submitted reports" on public.reports
 create policy "Only admin can delete reports" on public.reports
   for delete using (public.current_user_role() = 'admin');
 
--- SIGHT SCOPE & PROGRESS POLICIES
+-- REPORT CREW POLICIES
+create policy "Authenticated users view report crew" on public.report_crew
+  for select using (auth.role() = 'authenticated');
+
+create policy "Users can insert crew for reports" on public.report_crew
+  for insert with check (auth.role() = 'authenticated');
+
+create policy "Users can update crew for reports" on public.report_crew
+  for update using (auth.role() = 'authenticated');
+
+create policy "Users can delete crew for reports" on public.report_crew
+  for delete using (auth.role() = 'authenticated');
+
+-- REPORT ITEMS POLICIES
+create policy "Authenticated users view report items" on public.report_items
+  for select using (auth.role() = 'authenticated');
+
+create policy "Users can insert items for reports" on public.report_items
+  for insert with check (auth.role() = 'authenticated');
+
+create policy "Users can update items for reports" on public.report_items
+  for update using (auth.role() = 'authenticated');
+
+create policy "Users can delete items for reports" on public.report_items
+  for delete using (auth.role() = 'authenticated');
+
+-- REPORT PHOTOS POLICIES
+create policy "Authenticated users view report photos" on public.report_photos
+  for select using (auth.role() = 'authenticated');
+
+create policy "Users can insert photos for reports" on public.report_photos
+  for insert with check (auth.role() = 'authenticated');
+
+create policy "Users can delete photos for reports" on public.report_photos
+  for delete using (auth.role() = 'authenticated');
+
+-- SITE SCOPE & PROGRESS POLICIES
 create policy "Supervisor and admin can view site scope" on public.site_scope
   for select using (public.current_user_role() in ('supervisor', 'admin'));
 
 create policy "Admin can edit site scope" on public.site_scope
   for all using (public.current_user_role() = 'admin');
 
--- Public read for catalog items
+-- ACCESSORY PRICES POLICIES
+create policy "Authenticated users view accessory prices" on public.accessory_prices
+  for select using (auth.role() = 'authenticated');
+
+create policy "Admin manage accessory prices" on public.accessory_prices
+  for all using (public.current_user_role() = 'admin');
+
+-- PERMISSIONS POLICIES
+create policy "Authenticated users view permissions" on public.permissions
+  for select using (auth.role() = 'authenticated');
+
+create policy "Admin manage permissions" on public.permissions
+  for all using (public.current_user_role() = 'admin');
+
+-- SETTINGS POLICIES
+create policy "Authenticated users view settings" on public.settings
+  for select using (auth.role() = 'authenticated');
+
+create policy "Admin manage settings" on public.settings
+  for all using (public.current_user_role() = 'admin');
+
+-- AUDIT LOG POLICIES
+create policy "Authenticated users insert audit log" on public.audit_log
+  for insert with check (auth.role() = 'authenticated');
+
+create policy "Supervisor and admin view audit log" on public.audit_log
+  for select using (public.current_user_role() in ('supervisor', 'admin'));
+
+-- IMPORT LOGS POLICIES
+create policy "Supervisor and admin view import logs" on public.import_logs
+  for select using (public.current_user_role() in ('supervisor', 'admin'));
+
+create policy "Supervisor and admin manage import logs" on public.import_logs
+  for all using (public.current_user_role() in ('supervisor', 'admin'));
+
+-- CATALOGS (Public read for authenticated users)
 create policy "Authenticated users view accessories" on public.accessories
   for select using (auth.role() = 'authenticated');
 
@@ -268,7 +345,7 @@ begin
   end if;
   return new;
 end;
-$$ language plpgsql;
+$$ language plpgsql set search_path = public;
 
 create trigger trigger_check_crew_overlap
 before insert or update on public.report_crew
