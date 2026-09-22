@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Profile } from '../../types';
 import { APLogo } from '../common/APLogo';
-import { repository } from '../../data';
+import { repository, supabaseRepo, isSupabaseConfigured } from '../../data';
 import {
   isBiometricSupported,
   authenticateWithBiometrics,
@@ -58,6 +58,7 @@ export const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [staffError, setStaffError] = useState<string | null>(null);
+  const [staffLoading, setStaffLoading] = useState<boolean>(false);
 
   const activeInstallers = profiles.filter(p => p.role === 'installer' && p.active);
   const activeStaff = profiles.filter(p => (p.role === 'supervisor' || p.role === 'admin') && p.active);
@@ -221,30 +222,57 @@ export const LoginScreen: React.FC = () => {
     window.open(`https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${text}`, '_blank');
   };
 
-  // Staff Login Handler
-  const handleStaffLogin = (e: React.FormEvent) => {
+  // Staff Login Handler (Supabase Auth first, local fallback)
+  const handleStaffLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setStaffError(null);
+    setStaffLoading(true);
 
     const cleanEmail = email.trim().toLowerCase();
+
+    // 1. If Supabase is configured, try Supabase Auth
+    if (isSupabaseConfigured) {
+      try {
+        const res = await supabaseRepo.signInWithPassword(cleanEmail, password);
+        if (res.user) {
+          executeLogin(res.user);
+          setStaffLoading(false);
+          return;
+        }
+        if (res.error) {
+          const errLower = res.error.toLowerCase();
+          if (
+            errLower.includes('invalid login credentials') ||
+            errLower.includes('invalid credentials')
+          ) {
+            setStaffError('Credenciales inválidas en Supabase. Verifica tu correo y contraseña.');
+            setStaffLoading(false);
+            return;
+          }
+        }
+      } catch (err: any) {
+        console.warn('Supabase auth exception:', err);
+      }
+    }
+
+    // 2. Fallback to local profile check (mock / demo accounts)
     const user = profiles.find(
       p =>
         (p.role === 'supervisor' || p.role === 'admin') &&
         p.email?.trim().toLowerCase() === cleanEmail
     );
 
-    if (!user) {
-      setStaffError('No existe una cuenta registrada con este correo electrónico.');
-      return;
+    if (user) {
+      const expectedPassword = user.password || 'admin123';
+      if (password === expectedPassword) {
+        executeLogin(user);
+        setStaffLoading(false);
+        return;
+      }
     }
 
-    const expectedPassword = user.password || 'admin123';
-    if (password !== expectedPassword) {
-      setStaffError('Contraseña incorrecta. Verifica e intenta nuevamente.');
-      return;
-    }
-
-    executeLogin(user);
+    setStaffError('Correo o contraseña incorrectos. Verifica e intenta nuevamente.');
+    setStaffLoading(false);
   };
 
   return (
@@ -572,9 +600,10 @@ export const LoginScreen: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
+                disabled={staffLoading}
+                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
               >
-                <span>Iniciar Sesión</span>
+                <span>{staffLoading ? 'Verificando credenciales...' : 'Iniciar Sesión'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>

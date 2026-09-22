@@ -55,19 +55,123 @@ export class SupabaseRepository implements IDataRepository {
     return this.client;
   }
 
+  getClient(): SupabaseClient | null {
+    return this.client;
+  }
+
+  // --- Supabase Authentication ---
+  async signInWithPassword(
+    email: string,
+    password: string
+  ): Promise<{ user: Profile | null; error?: string }> {
+    if (!this.isConfigured || !this.client) {
+      return { user: null, error: 'Supabase no está configurado.' };
+    }
+
+    try {
+      const { data, error } = await this.client.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { user: null, error: error.message };
+      }
+
+      if (!data.user) {
+        return { user: null, error: 'No se obtuvo información de sesión de Supabase.' };
+      }
+
+      // Find or create profile row in public.profiles
+      let profile: Profile | null = null;
+      try {
+        const { data: profData } = await this.client
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (profData) {
+          profile = profData as Profile;
+        } else {
+          // Auto-provision profile with admin role if created in auth
+          const newProf: Partial<Profile> = {
+            id: data.user.id,
+            full_name: data.user.user_metadata?.full_name || email.split('@')[0],
+            email: data.user.email,
+            role: 'admin',
+            active: true,
+            default_hourly_rate: 40,
+          };
+          const { data: createdProf } = await this.client
+            .from('profiles')
+            .upsert(newProf)
+            .select()
+            .single();
+
+          profile = (createdProf as Profile) || {
+            id: data.user.id,
+            full_name: newProf.full_name!,
+            email: newProf.email,
+            role: 'admin',
+            active: true,
+            default_hourly_rate: 40,
+          };
+        }
+      } catch (profErr) {
+        console.warn('Profile fetch exception, using fallback profile:', profErr);
+        profile = {
+          id: data.user.id,
+          full_name: data.user.user_metadata?.full_name || email.split('@')[0],
+          email: data.user.email,
+          role: 'admin',
+          active: true,
+          default_hourly_rate: 40,
+        };
+      }
+
+      return { user: profile };
+    } catch (err: any) {
+      return { user: null, error: err.message || 'Error desconocido al autenticar en Supabase.' };
+    }
+  }
+
+  async signOut(): Promise<void> {
+    if (this.client) {
+      try {
+        await this.client.auth.signOut();
+      } catch {}
+    }
+  }
+
   // --- Profiles ---
   async getProfiles(): Promise<Profile[]> {
     if (!this.isConfigured) return this.fallback.getProfiles();
-    const { data, error } = await this.getSupabase().from('profiles').select('*').order('full_name');
-    if (error) throw error;
-    return (data || []) as Profile[];
+    try {
+      const { data, error } = await this.getSupabase().from('profiles').select('*').order('full_name');
+      if (error) {
+        console.warn('Supabase getProfiles returned error, using fallback:', error);
+        return this.fallback.getProfiles();
+      }
+      if (!data || data.length === 0) {
+        return this.fallback.getProfiles();
+      }
+      return data as Profile[];
+    } catch (err) {
+      console.warn('Exception in getProfiles, using fallback:', err);
+      return this.fallback.getProfiles();
+    }
   }
 
   async getProfileById(id: string): Promise<Profile | null> {
     if (!this.isConfigured) return this.fallback.getProfileById(id);
-    const { data, error } = await this.getSupabase().from('profiles').select('*').eq('id', id).maybeSingle();
-    if (error) throw error;
-    return data as Profile | null;
+    try {
+      const { data, error } = await this.getSupabase().from('profiles').select('*').eq('id', id).maybeSingle();
+      if (error || !data) return this.fallback.getProfileById(id);
+      return data as Profile | null;
+    } catch {
+      return this.fallback.getProfileById(id);
+    }
   }
 
   async saveProfile(profile: Partial<Profile> & { id?: string }): Promise<Profile> {
