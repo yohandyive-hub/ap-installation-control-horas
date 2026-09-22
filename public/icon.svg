@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Royal Blue Circle Background -->
+  <circle cx="256" cy="256" r="212" fill="#04269e" />
+
+  <!-- Monogram AP in high contrast Solid Black -->
+  <g fill="#000000">
+    <!-- Letter A outer and inner strokes -->
+    <path
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      d="
+        M 180 156
+        L 352 156
+        C 400 156 424 184 424 232
+        C 424 280 400 308 352 308
+        L 310 308
+        L 310 376
+        C 310 404 286 414 264 414
+        C 246 414 236 400 236 380
+        L 236 348
+        L 190 392
+        L 142 392
+        L 68 392
+        L 155 156
+        L 180 156
+        Z
+
+        M 172 240
+        L 142 312
+        L 220 312
+        L 192 240
+        Z
+
+        M 264 196
+        L 348 196
+        C 374 196 384 210 384 232
+        C 384 254 374 268 348 268
+        L 264 268
+        Z
+      "
+    />
+  </g>
+</svg>

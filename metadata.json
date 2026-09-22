@@ -1,0 +1,6 @@
+{
+  "name": "AP Installation – Control de Horas e Instalaciones",
+  "description": "PWA mobile-first para subcontratista de construcción División 10 en Florida: control de horas, producción de instaladores, avance de obra para supervisor y administración.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   THEME STYLING: MODO CLARO ELEGANTE Y MODO OSCURO PROFESIONAL
+   ========================================================================== */
+
+/* 1. MODO CLARO (LIGHT THEME) */
+html.light,
+.light {
+  color-scheme: light;
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.light body,
+.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Background layers in Light Mode */
+html.light .bg-slate-950,
+.light .bg-slate-950 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-slate-900,
+.light .bg-slate-900 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+html.light .bg-slate-900\/95,
+.light .bg-slate-900\/95,
+html.light .bg-slate-900\/80,
+.light .bg-slate-900\/80,
+html.light .bg-slate-900\/50,
+.light .bg-slate-900\/50 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light .bg-slate-800,
+.light .bg-slate-800,
+html.light .bg-slate-800\/80,
+.light .bg-slate-800\/80,
+html.light .bg-slate-800\/70,
+.light .bg-slate-800\/70 {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light .bg-slate-700,
+.light .bg-slate-700 {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Borders in Light Mode */
+html.light .border-slate-800,
+.light .border-slate-800,
+html.light .border-slate-800\/80,
+.light .border-slate-800\/80,
+html.light .border-slate-800\/60,
+.light .border-slate-800\/60,
+html.light .border-slate-800\/40,
+.light .border-slate-800\/40,
+html.light .border-slate-900,
+.light .border-slate-900 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .border-slate-700,
+.light .border-slate-700,
+html.light .border-slate-700\/60,
+.light .border-slate-700\/60 {
+  border-color: #cbd5e1 !important;
+}
+
+/* Typography in Light Mode */
+html.light .text-white,
+.light .text-white {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-100,
+.light .text-slate-100,
+html.light .text-slate-200,
+.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-300,
+.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400,
+.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.light .text-slate-500,
+.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Form Inputs in Light Mode */
+html.light input,
+.light input,
+html.light select,
+.light select,
+html.light textarea,
+.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input:focus,
+.light input:focus,
+html.light select:focus,
+.light select:focus,
+html.light textarea:focus,
+.light textarea:focus {
+  border-color: #f59e0b !important;
+  outline: none;
+}
+
+/* Hover and active states in light mode */
+html.light .hover\:bg-slate-800:hover,
+.light .hover\:bg-slate-800:hover,
+html.light .hover\:bg-slate-750:hover,
+.light .hover\:bg-slate-750:hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* Striped pattern for pending progress bar */
+.progress-striped {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.25) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.25) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+}
+
+/* Touch targets >= 44px */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
