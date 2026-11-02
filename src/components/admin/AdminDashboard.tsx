@@ -39,7 +39,7 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 overflow-x-auto text-xs font-bold no-scrollbar">
         <button
           onClick={() => setTab('kpis')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'kpis'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -51,7 +51,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => setTab('consolidated')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'consolidated'
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-emerald-400 hover:text-white font-black'
@@ -63,7 +63,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => setTab('catalogues')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'catalogues'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -75,7 +75,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => setTab('scope')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'scope'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -87,7 +87,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => setTab('import')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'import'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -99,7 +99,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => setTab('users')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'users'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -111,7 +111,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => setTab('permissions')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'permissions'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -123,7 +123,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => setTab('settings')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'settings'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
@@ -135,7 +135,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => setTab('audit')}
-          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
+          className={`shrink-0 px-3 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
             tab === 'audit'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'

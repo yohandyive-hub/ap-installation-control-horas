@@ -192,145 +192,59 @@ alter table public.accessories enable row level security;
 alter table public.job_sites enable row level security;
 alter table public.contractors enable row level security;
 alter table public.permissions enable row level security;
-alter table public.accessory_prices enable row level security;
-alter table public.audit_log enable row level security;
-alter table public.import_logs enable row level security;
+alter table public.settings enable row level security;
 
--- Function to get current user role with secure search_path
+-- Function to get current user role
 create or replace function public.current_user_role()
 returns user_role as $$
-  select coalesce(
-    (select role from public.profiles where id = auth.uid() limit 1),
-    null
-  );
-$$ language sql stable security definer set search_path = public;
-
--- Grant execution to anon, authenticated and service_role so RLS evaluations never throw 42501
-grant execute on function public.current_user_role() to anon, authenticated, service_role;
+  select role from public.profiles where id = auth.uid();
+$$ language sql stable security definer;
 
 -- PROFILES POLICIES
--- Allow reading active profiles so installers and staff can select their name on login screen
 create policy "Users can view active profiles" on public.profiles
-  for select using (true);
+  for select using (auth.role() = 'authenticated');
 
 create policy "Admins can manage profiles" on public.profiles
   for all using (public.current_user_role() = 'admin');
 
 -- REPORTS POLICIES
--- Installers: can see their own reports (or supervisors/admins see all)
+-- Installers: can only see their own reports (created_by or as crew member)
 create policy "Installers view own reports" on public.reports
   for select using (
     public.current_user_role() in ('supervisor', 'admin')
     or created_by = auth.uid()
     or exists (select 1 from public.report_crew where report_id = reports.id and user_id = auth.uid())
-    or auth.role() = 'anon'
   );
 
 create policy "Installers insert reports" on public.reports
-  for insert with check (
-    created_by = auth.uid() 
-    or public.current_user_role() in ('supervisor', 'admin')
-    or auth.role() = 'anon'
-  );
+  for insert with check (created_by = auth.uid() or public.current_user_role() in ('supervisor', 'admin'));
 
 create policy "Installers edit draft or submitted reports" on public.reports
   for update using (
     public.current_user_role() = 'admin'
     or (public.current_user_role() = 'supervisor' and status != 'approved')
     or (created_by = auth.uid() and status in ('draft', 'submitted'))
-    or auth.role() = 'anon'
   );
 
 create policy "Only admin can delete reports" on public.reports
   for delete using (public.current_user_role() = 'admin');
 
--- REPORT CREW POLICIES
-create policy "Users can view report crew" on public.report_crew
-  for select using (true);
-
-create policy "Users can insert crew for reports" on public.report_crew
-  for insert with check (true);
-
-create policy "Users can update crew for reports" on public.report_crew
-  for update using (true);
-
-create policy "Users can delete crew for reports" on public.report_crew
-  for delete using (true);
-
--- REPORT ITEMS POLICIES
-create policy "Users can view report items" on public.report_items
-  for select using (true);
-
-create policy "Users can insert items for reports" on public.report_items
-  for insert with check (true);
-
-create policy "Users can update items for reports" on public.report_items
-  for update using (true);
-
-create policy "Users can delete items for reports" on public.report_items
-  for delete using (true);
-
--- REPORT PHOTOS POLICIES
-create policy "Users can view report photos" on public.report_photos
-  for select using (true);
-
-create policy "Users can insert photos for reports" on public.report_photos
-  for insert with check (true);
-
-create policy "Users can delete photos for reports" on public.report_photos
-  for delete using (true);
-
--- SITE SCOPE & PROGRESS POLICIES
+-- SIGHT SCOPE & PROGRESS POLICIES
 create policy "Supervisor and admin can view site scope" on public.site_scope
   for select using (public.current_user_role() in ('supervisor', 'admin'));
 
 create policy "Admin can edit site scope" on public.site_scope
   for all using (public.current_user_role() = 'admin');
 
--- ACCESSORY PRICES POLICIES
-create policy "Anyone can view accessory prices" on public.accessory_prices
-  for select using (true);
-
-create policy "Admin manage accessory prices" on public.accessory_prices
-  for all using (public.current_user_role() = 'admin');
-
--- PERMISSIONS POLICIES
-create policy "Authenticated users view permissions" on public.permissions
+-- Public read for catalog items
+create policy "Authenticated users view accessories" on public.accessories
   for select using (auth.role() = 'authenticated');
 
-create policy "Admin manage permissions" on public.permissions
-  for all using (public.current_user_role() = 'admin');
-
--- SETTINGS POLICIES
-create policy "Authenticated users view settings" on public.settings
+create policy "Authenticated users view job sites" on public.job_sites
   for select using (auth.role() = 'authenticated');
 
-create policy "Admin manage settings" on public.settings
-  for all using (public.current_user_role() = 'admin');
-
--- AUDIT LOG POLICIES
-create policy "Authenticated users insert audit log" on public.audit_log
-  for insert with check (auth.role() = 'authenticated');
-
-create policy "Supervisor and admin view audit log" on public.audit_log
-  for select using (public.current_user_role() in ('supervisor', 'admin'));
-
--- IMPORT LOGS POLICIES
-create policy "Supervisor and admin view import logs" on public.import_logs
-  for select using (public.current_user_role() in ('supervisor', 'admin'));
-
-create policy "Supervisor and admin manage import logs" on public.import_logs
-  for all using (public.current_user_role() in ('supervisor', 'admin'));
-
--- CATALOGS (Public read for active app operations)
-create policy "Anyone can view accessories" on public.accessories
-  for select using (true);
-
-create policy "Anyone can view job sites" on public.job_sites
-  for select using (true);
-
-create policy "Anyone can view contractors" on public.contractors
-  for select using (true);
+create policy "Authenticated users view contractors" on public.contractors
+  for select using (auth.role() = 'authenticated');
 
 -- ==============================================================================
 -- TRIGGERS & FUNCTIONS
@@ -354,7 +268,7 @@ begin
   end if;
   return new;
 end;
-$$ language plpgsql set search_path = public;
+$$ language plpgsql;
 
 create trigger trigger_check_crew_overlap
 before insert or update on public.report_crew

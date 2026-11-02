@@ -169,107 +169,139 @@ export const InstallerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Tabs Switcher */}
-      <div className="flex items-center gap-1.5 sm:gap-2 p-1 rounded-2xl bg-slate-900 border border-slate-800 overflow-x-auto no-scrollbar">
+      {/* Primary Actions: Nuevo Reporte vs Mis Reportes */}
+      <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800">
         <button
           onClick={() => {
             setEditingReport(null);
             setActiveTab('new');
           }}
-          className={`flex-1 min-w-[130px] py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target whitespace-nowrap ${
+          className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target ${
             activeTab === 'new'
-              ? 'bg-amber-500 text-slate-950 shadow-md'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-amber-400'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
           <Plus className="w-4 h-4 shrink-0" />
-          <span>{editingReport ? 'Editando Reporte' : 'Nuevo Reporte'}</span>
+          <span className="truncate">{editingReport ? 'Editando Reporte' : 'Nuevo Reporte'}</span>
         </button>
 
         <button
           onClick={() => {
             setActiveTab('list');
           }}
-          className={`flex-1 min-w-[120px] py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target whitespace-nowrap ${
+          className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target ${
             activeTab === 'list'
-              ? 'bg-amber-500 text-slate-950 shadow-md'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-amber-400'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
           <ListFilter className="w-4 h-4 shrink-0" />
-          <span>Mis Reportes</span>
+          <span className="truncate">Mis Reportes</span>
         </button>
-
-        {canViewProgress && (
-          <button
-            onClick={() => setActiveTab('progress')}
-            className={`flex-1 min-w-[125px] py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target whitespace-nowrap ${
-              activeTab === 'progress'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4 shrink-0" />
-            <span>Avance de Obra</span>
-          </button>
-        )}
-
-        {canViewScope && (
-          <button
-            onClick={() => setActiveTab('scope')}
-            className={`flex-1 min-w-[130px] py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target whitespace-nowrap ${
-              activeTab === 'scope'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Layers className="w-4 h-4 shrink-0" />
-            <span>Alcance Obra</span>
-          </button>
-        )}
-
-        {canViewCatalogues && (
-          <button
-            onClick={() => setActiveTab('catalogues')}
-            className={`flex-1 min-w-[130px] py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target whitespace-nowrap ${
-              activeTab === 'catalogues'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Package className="w-4 h-4 shrink-0" />
-            <span>Catálogos</span>
-          </button>
-        )}
-
-        {canViewPrices && (
-          <button
-            onClick={() => setActiveTab('prices')}
-            className={`flex-1 min-w-[110px] py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target whitespace-nowrap ${
-              activeTab === 'prices'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <DollarSign className="w-4 h-4 shrink-0" />
-            <span>Precios</span>
-          </button>
-        )}
-
-        {canViewHourlyRates && (
-          <button
-            onClick={() => setActiveTab('hours')}
-            className={`flex-1 min-w-[125px] py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all touch-target whitespace-nowrap ${
-              activeTab === 'hours'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Clock className="w-4 h-4 shrink-0 text-amber-400" />
-            <span>Horas</span>
-          </button>
-        )}
       </div>
+
+      {/* Auxiliary Reference Modules (only if user has permissions) */}
+      {(canViewProgress || canViewScope || canViewCatalogues || canViewPrices || canViewHourlyRates) && (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-1 px-1">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 shrink-0 flex items-center gap-1 mr-1">
+            <Layers className="w-3 h-3 text-amber-400" />
+            Módulos:
+          </span>
+
+          {canViewProgress && (
+            <button
+              onClick={() => setActiveTab('progress')}
+              className={`shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                activeTab === 'progress'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+              <span>Avance de Obra</span>
+            </button>
+          )}
+
+          {canViewScope && (
+            <button
+              onClick={() => setActiveTab('scope')}
+              className={`shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                activeTab === 'scope'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span>Alcance Obra</span>
+            </button>
+          )}
+
+          {canViewCatalogues && (
+            <button
+              onClick={() => setActiveTab('catalogues')}
+              className={`shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                activeTab === 'catalogues'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              <Package className="w-3.5 h-3.5 shrink-0" />
+              <span>Catálogos</span>
+            </button>
+          )}
+
+          {canViewPrices && (
+            <button
+              onClick={() => setActiveTab('prices')}
+              className={`shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                activeTab === 'prices'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5 shrink-0" />
+              <span>Precios</span>
+            </button>
+          )}
+
+          {canViewHourlyRates && (
+            <button
+              onClick={() => setActiveTab('hours')}
+              className={`shrink-0 py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                activeTab === 'hours'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+              <span>Horas Extras</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Auxiliary module banner with quick back button */}
+      {activeTab !== 'new' && activeTab !== 'list' && (
+        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
+          <span className="text-slate-400">
+            Módulo activo:{' '}
+            <strong className="text-amber-400">
+              {activeTab === 'progress' && 'Avance de Obra'}
+              {activeTab === 'scope' && 'Alcance de Obra'}
+              {activeTab === 'catalogues' && 'Catálogos'}
+              {activeTab === 'prices' && 'Lista de Precios'}
+              {activeTab === 'hours' && 'Horas Extras'}
+            </strong>
+          </span>
+          <button
+            onClick={() => setActiveTab('new')}
+            className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition active:scale-95"
+          >
+            ← Volver a Reporte
+          </button>
+        </div>
+      )}
 
       {/* Main Tab Content */}
       {activeTab === 'new' && (

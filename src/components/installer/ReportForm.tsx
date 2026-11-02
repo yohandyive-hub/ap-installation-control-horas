@@ -82,22 +82,12 @@ export const ReportForm: React.FC<ReportFormProps> = ({
     jobSites,
     contractors,
     accessories,
-    reports,
     refreshData,
     showToast,
   } = useApp();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const totalSteps = 5;
-
-  // Duplicate crew report warning modal state
-  const [duplicateCrewModal, setDuplicateCrewModal] = useState<{
-    creatorName: string;
-    siteName: string;
-    workDate: string;
-    overlappingNames: string[];
-    pendingDraft: boolean;
-  } | null>(null);
 
   // Form State
   const [workDate, setWorkDate] = useState<string>(initialReport?.work_date || prefillNextSite?.date || getTodayIso());
@@ -516,67 +506,11 @@ export const ReportForm: React.FC<ReportFormProps> = ({
     return true;
   };
 
-  // Check duplicate report for same site & date with overlapping crew members
-  const checkForDuplicateReport = (isDraft: boolean): boolean => {
-    if (isDraft) return false;
-
-    const currentCrewUserIds = crewInputs.map(c => c.userId);
-    const existingReports = (reports || []).filter(
-      r =>
-        r.work_date === workDate &&
-        r.job_site_id === selectedSiteId &&
-        r.id !== initialReport?.id &&
-        r.status !== 'draft'
-    );
-
-    for (const exRep of existingReports) {
-      const overlappingCrew = (exRep.crew || []).filter(c =>
-        currentCrewUserIds.includes(c.user_id)
-      );
-
-      if (overlappingCrew.length > 0) {
-        const overlappingNames = overlappingCrew.map(
-          m => m.user_name || profiles.find(p => p.id === m.user_id)?.full_name || 'Instalador'
-        );
-        const creatorProfile = profiles.find(p => p.id === exRep.created_by);
-        const creatorName = exRep.creator_name || creatorProfile?.full_name || 'Otro instalador';
-        const siteObj = jobSites.find(s => s.id === selectedSiteId);
-
-        setDuplicateCrewModal({
-          creatorName,
-          siteName: siteObj?.name || 'este sitio',
-          workDate,
-          overlappingNames,
-          pendingDraft: isDraft,
-        });
-        return true; // Found duplicate
-      }
-    }
-
-    return false;
-  };
-
-  const handleConfirmDuplicateSubmit = async () => {
-    if (!duplicateCrewModal) return;
-    const isDraft = duplicateCrewModal.pendingDraft;
-    setDuplicateCrewModal(null);
-    await executeReportSave(isDraft);
-  };
-
   // Submit Handler
-  const handleSubmitReport = async (asDraft: boolean = false, skipDuplicateCheck: boolean = false) => {
+  const handleSubmitReport = async (asDraft: boolean = false) => {
     const valid = await validateForm();
     if (!valid) return;
 
-    if (!skipDuplicateCheck && checkForDuplicateReport(asDraft)) {
-      return; // Stop and wait for user decision in duplicateWarning modal
-    }
-
-    await executeReportSave(asDraft);
-  };
-
-  // Core execution of report save
-  const executeReportSave = async (asDraft: boolean = false) => {
     setSaving(true);
     try {
       const isWeekend = isWeekendDay(workDate);
@@ -1605,68 +1539,6 @@ export const ReportForm: React.FC<ReportFormProps> = ({
           </div>
         </div>
       )}
-
-      {/* ========================================================================= */}
-      {/* MODAL DE ADVERTENCIA DE REPORTE DUPLICADO EN CUADRILLA */}
-      {/* ========================================================================= */}
-      {duplicateCrewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-amber-500/50 p-5 sm:p-6 text-slate-100 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-start gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-white">
-                  Posible Reporte Duplicado
-                </h3>
-                <p className="text-xs text-amber-300 font-medium mt-0.5">
-                  Esta cuadrilla ya fue reportada para la misma obra y fecha.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-              <p className="text-slate-300 leading-relaxed">
-                <strong className="text-amber-400 font-bold">{duplicateCrewModal.creatorName}</strong> ya envió un reporte para <strong className="text-white">{duplicateCrewModal.siteName}</strong> en la fecha <strong className="text-white">{duplicateCrewModal.workDate}</strong> incluyendo a:
-              </p>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {duplicateCrewModal.overlappingNames.map(name => (
-                  <span
-                    key={name}
-                    className="px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center gap-1"
-                  >
-                    <span>👷</span>
-                    <span>{name}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <p className="text-[11px] text-slate-400">
-              ¿Estás seguro de que deseas enviar este reporte duplicado? Si es un turno adicional o producción extra, puedes proceder.
-            </p>
-
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDuplicateCrewModal(null)}
-                className="flex-1 py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition active:scale-98"
-              >
-                Cancelar y Revisar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDuplicateSubmit}
-                className="flex-1 py-3 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 transition active:scale-98"
-              >
-                Sí, Enviar Duplicado
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
-

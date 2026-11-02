@@ -40,13 +40,13 @@ export const SupervisorDashboard: React.FC = () => {
         {canViewProgress && (
           <button
             onClick={() => setActiveTab('progress')}
-            className={`flex-1 min-w-[120px] py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all touch-target ${
+            className={`flex-1 shrink-0 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all touch-target whitespace-nowrap ${
               activeTab === 'progress'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <TrendingUp className="w-4 h-4" />
+            <TrendingUp className="w-4 h-4 shrink-0" />
             <span className="hidden md:inline">Avance de Obra por Sitio</span>
             <span className="md:hidden">Avance</span>
           </button>
@@ -55,13 +55,13 @@ export const SupervisorDashboard: React.FC = () => {
         {canViewReview && (
           <button
             onClick={() => setActiveTab('review')}
-            className={`flex-1 min-w-[120px] py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all touch-target ${
+            className={`flex-1 shrink-0 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all touch-target whitespace-nowrap ${
               activeTab === 'review'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <FileCheck2 className="w-4 h-4" />
+            <FileCheck2 className="w-4 h-4 shrink-0" />
             <span className="hidden md:inline">Revisión y Nómina</span>
             <span className="md:hidden">Revisión</span>
           </button>
@@ -70,13 +70,13 @@ export const SupervisorDashboard: React.FC = () => {
         {canViewMetrics && (
           <button
             onClick={() => setActiveTab('metrics')}
-            className={`flex-1 min-w-[120px] py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all touch-target ${
+            className={`flex-1 shrink-0 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all touch-target whitespace-nowrap ${
               activeTab === 'metrics'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Clock className="w-4 h-4 text-amber-400" />
+            <Clock className="w-4 h-4 shrink-0 text-amber-400" />
             <span className="hidden md:inline">Horas por Instalador</span>
             <span className="md:hidden">Horas</span>
           </button>

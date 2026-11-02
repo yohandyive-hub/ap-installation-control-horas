@@ -24,10 +24,6 @@ export interface Profile {
   default_hourly_rate: number; // e.g. 25
   pin?: string; // 4-6 digit quick PIN for installers
   password?: string; // password for supervisor and admin
-  biometric_enabled?: boolean;
-  biometric_credential_id?: string;
-  must_change_pin?: boolean;
-  temp_pin?: string;
 }
 
 export interface Contractor {

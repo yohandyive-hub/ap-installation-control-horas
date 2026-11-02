@@ -12,11 +12,6 @@ import {
   Shield,
   CheckCircle,
   XCircle,
-  MessageCircle,
-  KeyRound,
-  Fingerprint,
-  RotateCcw,
-  Share2,
 } from 'lucide-react';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 
@@ -92,70 +87,6 @@ export const UsersManager: React.FC = () => {
     }
   };
 
-  const handleShareWhatsApp = (user: Profile) => {
-    const appUrl = window.location.origin;
-    const currentPin = user.temp_pin || user.pin || '1234';
-    const text = encodeURIComponent(
-      `¡Hola ${user.full_name}! 👋\n` +
-      `Este es tu acceso a AP Installation LLC para reportar tus horas de trabajo:\n\n` +
-      `🔗 Enlace directo: ${appUrl}?u=${user.id}\n` +
-      `🔑 Tu PIN de acceso: ${currentPin}\n\n` +
-      `Al ingresar podrás configurar tu propio PIN y activar tu Huella o Face ID para entrar en 1 segundo.`
-    );
-    const cleanPhone = (user.phone || '').replace(/\D/g, '');
-    const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${text}` : `https://wa.me/?text=${text}`;
-    window.open(waUrl, '_blank');
-  };
-
-  const handleResetPin = async (user: Profile) => {
-    const tempPin = Math.floor(1000 + Math.random() * 9000).toString();
-    try {
-      await repository.saveProfile({
-        ...user,
-        pin: tempPin,
-        temp_pin: tempPin,
-        must_change_pin: true,
-      });
-      await repository.logAudit(
-        'update',
-        'profiles',
-        user.id,
-        `PIN restablecido para ${user.full_name}. Nuevo PIN provisional: ${tempPin}`,
-        { id: currentUser?.id || 'admin', name: currentUser?.full_name || 'Admin' }
-      );
-      await refreshData();
-      showToast(`Nuevo PIN generado para ${user.full_name}: ${tempPin}`, 'success');
-
-      const confirmShare = window.confirm(
-        `PIN provisional generado para ${user.full_name}: ${tempPin}\n¿Deseas enviárselo ahora mismo por WhatsApp?`
-      );
-      if (confirmShare) {
-        handleShareWhatsApp({ ...user, pin: tempPin, temp_pin: tempPin, must_change_pin: true });
-      }
-    } catch {
-      showToast('Error al restablecer el PIN', 'error');
-    }
-  };
-
-  const handleUnlinkBiometrics = async (user: Profile) => {
-    const confirmUnlink = window.confirm(
-      `¿Deseas desvincular la autenticación biométrica (Huella/Face ID) para ${user.full_name}? Podrá volver a vincularla al ingresar con su PIN.`
-    );
-    if (!confirmUnlink) return;
-
-    try {
-      await repository.saveProfile({
-        ...user,
-        biometric_credential_id: undefined,
-        biometric_enabled: false,
-      });
-      await refreshData();
-      showToast(`Biometría desvinculada para ${user.full_name}`, 'info');
-    } catch {
-      showToast('Error al desvincular la biometría', 'error');
-    }
-  };
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -226,16 +157,9 @@ export const UsersManager: React.FC = () => {
               <div className="mt-1 flex items-center justify-between text-[11px]">
                 <span className="text-slate-500">Credencial:</span>
                 {user.role === 'installer' ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-amber-400 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                      PIN: {user.temp_pin || user.pin || '1234'}
-                    </span>
-                    {user.biometric_enabled && (
-                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-0.5" title="Huella / Face ID vinculada">
-                        <Fingerprint className="w-3 h-3" /> Bio
-                      </span>
-                    )}
-                  </div>
+                  <span className="font-mono text-amber-400 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    PIN: {user.pin || '1234'}
+                  </span>
                 ) : (
                   <span className="font-mono text-blue-400 truncate max-w-[130px]" title={user.email}>
                     {user.email || 'correo'}
@@ -243,30 +167,6 @@ export const UsersManager: React.FC = () => {
                 )}
               </div>
             </div>
-
-            {/* Installer Quick Actions: WhatsApp Share & Reset PIN */}
-            {user.role === 'installer' && (
-              <div className="mt-2 pt-2 border-t border-slate-800/60 grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleShareWhatsApp(user)}
-                  className="py-1 px-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold text-[10px] flex items-center justify-center gap-1 transition"
-                  title="Enviar link de acceso por WhatsApp"
-                >
-                  <MessageCircle className="w-3 h-3" />
-                  <span>WhatsApp</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleResetPin(user)}
-                  className="py-1 px-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-[10px] flex items-center justify-center gap-1 transition"
-                  title="Generar nuevo PIN temporal de 4 dígitos"
-                >
-                  <KeyRound className="w-3 h-3" />
-                  <span>Reset PIN</span>
-                </button>
-              </div>
-            )}
 
             <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
               <button
@@ -281,15 +181,6 @@ export const UsersManager: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-1">
-                {user.biometric_enabled && (
-                  <button
-                    onClick={() => handleUnlinkBiometrics(user)}
-                    className="p-1.5 rounded-lg text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition"
-                    title="Desvincular Huella / Face ID de este usuario"
-                  >
-                    <Fingerprint className="w-3.5 h-3.5" />
-                  </button>
-                )}
                 <button
                   onClick={() => setEditingProfile({ ...user })}
                   className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition"
@@ -421,20 +312,6 @@ export const UsersManager: React.FC = () => {
                   <p className="text-[10px] text-slate-400">
                     Código numérico que el instalador digita en campo para acceder al sistema.
                   </p>
-                  <div className="flex items-center gap-2 pt-1 border-t border-amber-500/20">
-                    <input
-                      type="checkbox"
-                      id="must_change_pin"
-                      checked={Boolean(editingProfile.must_change_pin)}
-                      onChange={e =>
-                        setEditingProfile(prev => ({ ...prev, must_change_pin: e.target.checked }))
-                      }
-                      className="w-4 h-4 rounded text-amber-500 focus:ring-amber-400"
-                    />
-                    <label htmlFor="must_change_pin" className="text-[11px] text-slate-300 font-semibold cursor-pointer">
-                      Exigir cambio de PIN en el próximo inicio
-                    </label>
-                  </div>
                 </div>
               ) : (
                 <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 space-y-2">

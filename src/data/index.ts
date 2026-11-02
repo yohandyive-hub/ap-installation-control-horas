@@ -8,24 +8,16 @@ const supabaseRepo = new SupabaseRepository();
 
 /**
  * ============================================================================
- * CONFIGURACIÓN DE FUENTE DE DATOS HÍBRIDA / AUTOMÁTICA:
+ * CONFIGURACIÓN DE FUENTE DE DATOS:
  * ============================================================================
- * Si se detectan credenciales válidas de Supabase (ej. en Cloudflare Pages o .env),
- * se conecta automáticamente a Supabase (PostgreSQL + RLS + Storage).
- * De lo contrario, opera en modo local Mock con persistencia en localStorage.
+ * Para desarrollo y pruebas en AI Studio usamos mockRepo (memoria + localStorage con semillas realistas).
+ * Para conectar a Supabase en Cloudflare Pages / Producción:
+ * 1. Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en tu .env o panel de Cloudflare Pages.
+ * 2. Cambia la asignación de abajo a: export const repository: IDataRepository = supabaseRepo;
  * ============================================================================
  */
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const isSupabaseConfigured = Boolean(
-  supabaseUrl &&
-  supabaseAnonKey &&
-  !supabaseUrl.includes('your-project-id') &&
-  supabaseUrl.startsWith('http')
-);
-
-export const repository: IDataRepository = isSupabaseConfigured ? supabaseRepo : mockRepo;
+export const repository: IDataRepository = mockRepo;
 
 // Export implementations for direct access or testing if needed
-export { mockRepo, supabaseRepo, isSupabaseConfigured };
+export { mockRepo, supabaseRepo };
 export * from './repository.interface';

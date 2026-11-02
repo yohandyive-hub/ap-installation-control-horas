@@ -23,9 +23,9 @@ export const SEED_PROFILES: Profile[] = [
   { id: 'usr-jason', full_name: 'Jason', email: 'jason@apinstall.com', role: 'installer', default_hourly_rate: 20, active: true, phone: '(305) 555-0107', pin: '1234' },
   { id: 'usr-gregny', full_name: 'Gregny', email: 'gregny@apinstall.com', role: 'installer', default_hourly_rate: 20, active: true, phone: '(305) 555-0108', pin: '1234' },
   { id: 'usr-jenire', full_name: 'Jenire', email: 'jenire@apinstall.com', role: 'installer', default_hourly_rate: 20, active: true, phone: '(305) 555-0109', pin: '1234' },
-  { id: 'usr-yohandy', full_name: 'Yohandy', email: 'yohandyi@gmail.com', role: 'admin', default_hourly_rate: 40, active: true, phone: '+58 422-8463650', password: 'admin123', pin: '1234' },
+  { id: 'usr-yohandy', full_name: 'Yohandy', email: 'yohandyi@gmail.com', role: 'admin', default_hourly_rate: 40, active: true, phone: '(305) 555-0110', password: 'admin123', pin: '1234' },
   { id: 'usr-hector', full_name: 'Héctor Rodríguez', email: 'hector@apinstall.com', role: 'supervisor', default_hourly_rate: 32, active: true, phone: '(305) 555-0199', password: 'admin123' },
-  { id: 'usr-admin', full_name: 'Admin AP (Yohandy)', email: 'admin@apinstall.com', role: 'admin', default_hourly_rate: 40, active: true, phone: '+58 422-8463650', password: 'admin123' },
+  { id: 'usr-admin', full_name: 'Admin AP (Yo)', email: 'admin@apinstall.com', role: 'admin', default_hourly_rate: 40, active: true, phone: '(305) 555-0100', password: 'admin123' },
 ];
 
 export const SEED_CONTRACTORS: Contractor[] = [

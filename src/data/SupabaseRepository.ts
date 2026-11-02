@@ -55,140 +55,26 @@ export class SupabaseRepository implements IDataRepository {
     return this.client;
   }
 
-  getClient(): SupabaseClient | null {
-    return this.client;
-  }
-
-  // --- Supabase Authentication ---
-  async signInWithPassword(
-    email: string,
-    password: string
-  ): Promise<{ user: Profile | null; error?: string }> {
-    if (!this.isConfigured || !this.client) {
-      return { user: null, error: 'Supabase no está configurado.' };
-    }
-
-    try {
-      const { data, error } = await this.client.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return { user: null, error: error.message };
-      }
-
-      if (!data.user) {
-        return { user: null, error: 'No se obtuvo información de sesión de Supabase.' };
-      }
-
-      // Find or create profile row in public.profiles
-      let profile: Profile | null = null;
-      try {
-        const { data: profData } = await this.client
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .maybeSingle();
-
-        if (profData) {
-          profile = profData as Profile;
-        } else {
-          // Auto-provision profile with admin role if created in auth
-          const newProf: Partial<Profile> = {
-            id: data.user.id,
-            full_name: data.user.user_metadata?.full_name || email.split('@')[0],
-            email: data.user.email,
-            role: 'admin',
-            active: true,
-            default_hourly_rate: 40,
-          };
-          const { data: createdProf } = await this.client
-            .from('profiles')
-            .upsert(newProf)
-            .select()
-            .single();
-
-          profile = (createdProf as Profile) || {
-            id: data.user.id,
-            full_name: newProf.full_name!,
-            email: newProf.email,
-            role: 'admin',
-            active: true,
-            default_hourly_rate: 40,
-          };
-        }
-      } catch (profErr) {
-        console.warn('Profile fetch exception, using fallback profile:', profErr);
-        profile = {
-          id: data.user.id,
-          full_name: data.user.user_metadata?.full_name || email.split('@')[0],
-          email: data.user.email,
-          role: 'admin',
-          active: true,
-          default_hourly_rate: 40,
-        };
-      }
-
-      return { user: profile };
-    } catch (err: any) {
-      return { user: null, error: err.message || 'Error desconocido al autenticar en Supabase.' };
-    }
-  }
-
-  async signOut(): Promise<void> {
-    if (this.client) {
-      try {
-        await this.client.auth.signOut();
-      } catch {}
-    }
-  }
-
   // --- Profiles ---
   async getProfiles(): Promise<Profile[]> {
     if (!this.isConfigured) return this.fallback.getProfiles();
-    try {
-      const { data, error } = await this.getSupabase().from('profiles').select('*').order('full_name');
-      if (error) {
-        console.warn('Supabase getProfiles returned error, using fallback:', error);
-        return this.fallback.getProfiles();
-      }
-      if (!data || data.length === 0) {
-        return this.fallback.getProfiles();
-      }
-      return data as Profile[];
-    } catch (err) {
-      console.warn('Exception in getProfiles, using fallback:', err);
-      return this.fallback.getProfiles();
-    }
+    const { data, error } = await this.getSupabase().from('profiles').select('*').order('full_name');
+    if (error) throw error;
+    return (data || []) as Profile[];
   }
 
   async getProfileById(id: string): Promise<Profile | null> {
     if (!this.isConfigured) return this.fallback.getProfileById(id);
-    try {
-      const { data, error } = await this.getSupabase().from('profiles').select('*').eq('id', id).maybeSingle();
-      if (error || !data) return this.fallback.getProfileById(id);
-      return data as Profile | null;
-    } catch {
-      return this.fallback.getProfileById(id);
-    }
+    const { data, error } = await this.getSupabase().from('profiles').select('*').eq('id', id).maybeSingle();
+    if (error) throw error;
+    return data as Profile | null;
   }
 
   async saveProfile(profile: Partial<Profile> & { id?: string }): Promise<Profile> {
-    const local = await this.fallback.saveProfile(profile);
-    if (!this.isConfigured) return local;
-    try {
-      const { pin, temp_pin, must_change_pin, biometric_enabled, biometric_credential_id, password, ...cleanProf } = profile as any;
-      const { data, error } = await this.getSupabase().from('profiles').upsert(cleanProf).select().single();
-      if (error) {
-        console.warn('Supabase saveProfile error, using local:', error);
-        return local;
-      }
-      return { ...local, ...(data as Profile) };
-    } catch (err) {
-      console.warn('Exception in saveProfile, using local:', err);
-      return local;
-    }
+    if (!this.isConfigured) return this.fallback.saveProfile(profile);
+    const { data, error } = await this.getSupabase().from('profiles').upsert(profile).select().single();
+    if (error) throw error;
+    return data as Profile;
   }
 
   async deleteProfile(id: string): Promise<boolean> {
@@ -201,33 +87,16 @@ export class SupabaseRepository implements IDataRepository {
   // --- Contractors ---
   async getContractors(): Promise<Contractor[]> {
     if (!this.isConfigured) return this.fallback.getContractors();
-    try {
-      const { data, error } = await this.getSupabase().from('contractors').select('*').order('name');
-      if (error) {
-        console.warn('Supabase getContractors error, using fallback:', error);
-        return this.fallback.getContractors();
-      }
-      return (data && data.length > 0) ? (data as Contractor[]) : this.fallback.getContractors();
-    } catch (err) {
-      console.warn('Exception in getContractors, using fallback:', err);
-      return this.fallback.getContractors();
-    }
+    const { data, error } = await this.getSupabase().from('contractors').select('*').order('name');
+    if (error) throw error;
+    return (data || []) as Contractor[];
   }
 
   async saveContractor(contractor: Partial<Contractor> & { id?: string }): Promise<Contractor> {
-    const local = await this.fallback.saveContractor(contractor);
-    if (!this.isConfigured) return local;
-    try {
-      const { data, error } = await this.getSupabase().from('contractors').upsert(contractor).select().single();
-      if (error) {
-        console.warn('Supabase saveContractor error, using local:', error);
-        return local;
-      }
-      return data as Contractor;
-    } catch (err) {
-      console.warn('Exception in saveContractor, using local:', err);
-      return local;
-    }
+    if (!this.isConfigured) return this.fallback.saveContractor(contractor);
+    const { data, error } = await this.getSupabase().from('contractors').upsert(contractor).select().single();
+    if (error) throw error;
+    return data as Contractor;
   }
 
   async deleteContractor(id: string): Promise<boolean> {
@@ -240,44 +109,25 @@ export class SupabaseRepository implements IDataRepository {
   // --- Job Sites ---
   async getJobSites(): Promise<JobSite[]> {
     if (!this.isConfigured) return this.fallback.getJobSites();
-    try {
-      const { data, error } = await this.getSupabase()
-        .from('job_sites')
-        .select('*, contractors(name)')
-        .order('name');
-      if (error) {
-        console.warn('Supabase getJobSites error, using fallback:', error);
-        return this.fallback.getJobSites();
-      }
-      if (!data || data.length === 0) return this.fallback.getJobSites();
-      return data.map((row: any) => ({
-        id: row.id,
-        name: row.name,
-        contractor_id: row.contractor_id,
-        contractor_name: row.contractors?.name || '',
-        active: row.active,
-      }));
-    } catch (err) {
-      console.warn('Exception in getJobSites, using fallback:', err);
-      return this.fallback.getJobSites();
-    }
+    const { data, error } = await this.getSupabase()
+      .from('job_sites')
+      .select('*, contractors(name)')
+      .order('name');
+    if (error) throw error;
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      contractor_id: row.contractor_id,
+      contractor_name: row.contractors?.name || '',
+      active: row.active,
+    }));
   }
 
   async saveJobSite(site: Partial<JobSite> & { id?: string }): Promise<JobSite> {
-    const local = await this.fallback.saveJobSite(site);
-    if (!this.isConfigured) return local;
-    try {
-      const { contractor_name, ...cleanSite } = site as any;
-      const { data, error } = await this.getSupabase().from('job_sites').upsert(cleanSite).select().single();
-      if (error) {
-        console.warn('Supabase saveJobSite error, using local:', error);
-        return local;
-      }
-      return { ...local, ...(data as JobSite) };
-    } catch (err) {
-      console.warn('Exception in saveJobSite, using local:', err);
-      return local;
-    }
+    if (!this.isConfigured) return this.fallback.saveJobSite(site);
+    const { data, error } = await this.getSupabase().from('job_sites').upsert(site).select().single();
+    if (error) throw error;
+    return data as JobSite;
   }
 
   async deleteJobSite(id: string): Promise<boolean> {
@@ -290,17 +140,9 @@ export class SupabaseRepository implements IDataRepository {
   // --- Accessories ---
   async getAccessories(): Promise<Accessory[]> {
     if (!this.isConfigured) return this.fallback.getAccessories();
-    try {
-      const { data, error } = await this.getSupabase().from('accessories').select('*').order('name');
-      if (error) {
-        console.warn('Supabase getAccessories error, using fallback:', error);
-        return this.fallback.getAccessories();
-      }
-      return (data && data.length > 0) ? (data as Accessory[]) : this.fallback.getAccessories();
-    } catch (err) {
-      console.warn('Exception in getAccessories, using fallback:', err);
-      return this.fallback.getAccessories();
-    }
+    const { data, error } = await this.getSupabase().from('accessories').select('*').order('name');
+    if (error) throw error;
+    return (data || []) as Accessory[];
   }
 
   async saveAccessory(accessory: Partial<Accessory> & { id?: string }): Promise<Accessory> {
@@ -319,17 +161,9 @@ export class SupabaseRepository implements IDataRepository {
 
   async getAccessoryPrices(): Promise<AccessoryPrice[]> {
     if (!this.isConfigured) return this.fallback.getAccessoryPrices();
-    try {
-      const { data, error } = await this.getSupabase().from('accessory_prices').select('*');
-      if (error) {
-        console.warn('Supabase getAccessoryPrices error, using fallback:', error);
-        return this.fallback.getAccessoryPrices();
-      }
-      return (data && data.length > 0) ? (data as AccessoryPrice[]) : this.fallback.getAccessoryPrices();
-    } catch (err) {
-      console.warn('Exception in getAccessoryPrices, using fallback:', err);
-      return this.fallback.getAccessoryPrices();
-    }
+    const { data, error } = await this.getSupabase().from('accessory_prices').select('*');
+    if (error) throw error;
+    return (data || []) as AccessoryPrice[];
   }
 
   async saveAccessoryPrice(price: Partial<AccessoryPrice> & { id?: string }): Promise<AccessoryPrice> {
@@ -342,19 +176,11 @@ export class SupabaseRepository implements IDataRepository {
   // --- Site Scopes ---
   async getSiteScopes(jobSiteId?: string): Promise<SiteScope[]> {
     if (!this.isConfigured) return this.fallback.getSiteScopes(jobSiteId);
-    try {
-      let query = this.getSupabase().from('site_scope').select('*');
-      if (jobSiteId) query = query.eq('job_site_id', jobSiteId);
-      const { data, error } = await query;
-      if (error) {
-        console.warn('Supabase getSiteScopes error, using fallback:', error);
-        return this.fallback.getSiteScopes(jobSiteId);
-      }
-      return (data && data.length > 0) ? (data as SiteScope[]) : this.fallback.getSiteScopes(jobSiteId);
-    } catch (err) {
-      console.warn('Exception in getSiteScopes, using fallback:', err);
-      return this.fallback.getSiteScopes(jobSiteId);
-    }
+    let query = this.getSupabase().from('site_scope').select('*');
+    if (jobSiteId) query = query.eq('job_site_id', jobSiteId);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []) as SiteScope[];
   }
 
   async saveSiteScope(scope: Partial<SiteScope> & { id?: string }): Promise<SiteScope> {
@@ -374,54 +200,42 @@ export class SupabaseRepository implements IDataRepository {
   // --- Reports ---
   async getReports(filter?: ReportFilter): Promise<Report[]> {
     if (!this.isConfigured) return this.fallback.getReports(filter);
-    try {
-      let query = this.getSupabase()
-        .from('reports')
-        .select('*, report_crew(*), report_items(*), report_photos(*), job_sites(name, contractor_id, contractors(name)), profiles!created_by(full_name)')
-        .order('work_date', { ascending: false });
+    let query = this.getSupabase()
+      .from('reports')
+      .select('*, report_crew(*), report_items(*), report_photos(*), job_sites(name, contractor_id, contractors(name)), profiles!created_by(full_name)')
+      .order('work_date', { ascending: false });
 
-      if (filter?.date) query = query.eq('work_date', filter.date);
-      if (filter?.startDate && filter?.endDate) {
-        query = query.gte('work_date', filter.startDate).lte('work_date', filter.endDate);
-      }
-      if (filter?.jobSiteId) query = query.eq('job_site_id', filter.jobSiteId);
-      if (filter?.status) query = query.eq('status', filter.status);
-
-      const { data, error } = await query;
-      if (error) {
-        console.warn('Supabase getReports error, using fallback:', error);
-        return this.fallback.getReports(filter);
-      }
-
-      if (!data || data.length === 0) {
-        return this.fallback.getReports(filter);
-      }
-
-      // Transform Supabase nested relations to match internal Report interface
-      return (data || []).map((row: any) => ({
-        id: row.id,
-        work_date: row.work_date,
-        job_site_id: row.job_site_id,
-        job_site_name: row.job_sites?.name,
-        contractor_id: row.job_sites?.contractor_id,
-        contractor_name: row.job_sites?.contractors?.name,
-        created_by: row.created_by,
-        creator_name: row.profiles?.full_name,
-        status: row.status,
-        observations: row.observations,
-        incident_type: row.incident_type,
-        activities_performed: row.activities_performed,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-        supervisor_notes: row.supervisor_notes,
-        crew: row.report_crew || [],
-        items: row.report_items || [],
-        photos: row.report_photos || [],
-      }));
-    } catch (err) {
-      console.warn('Exception in getReports, using fallback:', err);
-      return this.fallback.getReports(filter);
+    if (filter?.date) query = query.eq('work_date', filter.date);
+    if (filter?.startDate && filter?.endDate) {
+      query = query.gte('work_date', filter.startDate).lte('work_date', filter.endDate);
     }
+    if (filter?.jobSiteId) query = query.eq('job_site_id', filter.jobSiteId);
+    if (filter?.status) query = query.eq('status', filter.status);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Transform Supabase nested relations to match internal Report interface
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      work_date: row.work_date,
+      job_site_id: row.job_site_id,
+      job_site_name: row.job_sites?.name,
+      contractor_id: row.job_sites?.contractor_id,
+      contractor_name: row.job_sites?.contractors?.name,
+      created_by: row.created_by,
+      creator_name: row.profiles?.full_name,
+      status: row.status,
+      observations: row.observations,
+      incident_type: row.incident_type,
+      activities_performed: row.activities_performed,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      supervisor_notes: row.supervisor_notes,
+      crew: row.report_crew || [],
+      items: row.report_items || [],
+      photos: row.report_photos || [],
+    }));
   }
 
   async getReportById(id: string): Promise<Report | null> {
@@ -431,135 +245,58 @@ export class SupabaseRepository implements IDataRepository {
   }
 
   async saveReport(reportData: Partial<Report>): Promise<Report> {
-    // 1. Always save in local fallback first so data is immediately safe
-    const localSaved = await this.fallback.saveReport(reportData);
-    if (!this.isConfigured) return localSaved;
+    if (!this.isConfigured) return this.fallback.saveReport(reportData);
+    // In Supabase, upsert report row, then crew, then items
+    const { crew, items, photos, ...baseReport } = reportData as any;
+    const { data: rep, error: repErr } = await this.getSupabase()
+      .from('reports')
+      .upsert(baseReport)
+      .select()
+      .single();
+    if (repErr) throw repErr;
 
-    try {
-      // 2. Strip non-table UI/computed fields before inserting into public.reports
-      const {
-        crew,
-        items,
-        photos,
-        contractor_id,
-        contractor_name,
-        job_site_name,
-        creator_name,
-        ...rawBaseReport
-      } = reportData as any;
-
-      const baseReport: Record<string, any> = {
-        ...(rawBaseReport.id ? { id: rawBaseReport.id } : {}),
-        work_date: rawBaseReport.work_date,
-        job_site_id: rawBaseReport.job_site_id,
-        created_by: rawBaseReport.created_by,
-        status: rawBaseReport.status || 'submitted',
-        observations: rawBaseReport.observations ?? '',
-        incident_type: rawBaseReport.incident_type || 'ninguna',
-        activities_performed: rawBaseReport.activities_performed || [],
-        supervisor_notes: rawBaseReport.supervisor_notes || null,
-        created_at: rawBaseReport.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data: rep, error: repErr } = await this.getSupabase()
-        .from('reports')
-        .upsert(baseReport)
-        .select()
-        .single();
-
-      if (repErr) {
-        console.warn('Supabase saveReport error, persisted locally:', repErr);
-        return localSaved;
-      }
-
-      const reportId = rep.id;
-
-      if (crew && crew.length > 0) {
-        await this.getSupabase().from('report_crew').delete().eq('report_id', reportId);
-        const cleanCrew = crew.map((c: any) => ({
-          ...(c.id ? { id: c.id } : {}),
-          report_id: reportId,
-          user_id: c.user_id,
-          start_at: c.start_at,
-          end_at: c.end_at,
-          hours: Number(c.hours) || 0,
-          hourly_rate_snapshot: Number(c.hourly_rate_snapshot) || 0,
-          is_weekend: Boolean(c.is_weekend),
-          is_supervisor_no_hours: Boolean(c.is_supervisor_no_hours),
-          notes: c.notes || null,
-        }));
-        const { error: crewErr } = await this.getSupabase().from('report_crew').insert(cleanCrew);
-        if (crewErr) console.warn('Supabase report_crew insert error:', crewErr);
-      }
-
-      if (items && items.length > 0) {
-        await this.getSupabase().from('report_items').delete().eq('report_id', reportId);
-        const cleanItems = items.map((i: any) => ({
-          ...(i.id ? { id: i.id } : {}),
-          report_id: reportId,
-          accessory_id: i.accessory_id,
-          quantity: Number(i.quantity) || 1,
-          unit: i.unit || 'each',
-          measure_notes: i.measure_notes || null,
-          ...(i.unit_price_override !== undefined ? { unit_price_override: Number(i.unit_price_override) } : {}),
-        }));
-        const { error: itemsErr } = await this.getSupabase().from('report_items').insert(cleanItems);
-        if (itemsErr) console.warn('Supabase report_items insert error:', itemsErr);
-      }
-
-      return localSaved;
-    } catch (err) {
-      console.warn('Exception in saveReport, returning local copy:', err);
-      return localSaved;
+    const reportId = rep.id;
+    if (crew) {
+      await this.getSupabase().from('report_crew').delete().eq('report_id', reportId);
+      await this.getSupabase().from('report_crew').insert(
+        crew.map((c: any) => ({ ...c, report_id: reportId }))
+      );
     }
+    if (items) {
+      await this.getSupabase().from('report_items').delete().eq('report_id', reportId);
+      await this.getSupabase().from('report_items').insert(
+        items.map((i: any) => ({ ...i, report_id: reportId }))
+      );
+    }
+
+    return (await this.getReportById(reportId))!;
   }
 
   async deleteReport(id: string): Promise<boolean> {
-    await this.fallback.deleteReport(id);
-    if (!this.isConfigured) return true;
-    try {
-      const { error } = await this.getSupabase().from('reports').delete().eq('id', id);
-      if (error) console.warn('Supabase deleteReport error:', error);
-      return true;
-    } catch (err) {
-      console.warn('Exception in deleteReport:', err);
-      return true;
-    }
+    if (!this.isConfigured) return this.fallback.deleteReport(id);
+    const { error } = await this.getSupabase().from('reports').delete().eq('id', id);
+    if (error) throw error;
+    return true;
   }
 
   async updateReportStatus(id: string, status: ReportStatus, supervisorNotes?: string): Promise<Report> {
-    const local = await this.fallback.updateReportStatus(id, status, supervisorNotes);
-    if (!this.isConfigured) return local;
-    try {
-      const { data, error } = await this.getSupabase()
-        .from('reports')
-        .update({ status, supervisor_notes: supervisorNotes, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) console.warn('Supabase updateReportStatus error, using local:', error);
-      return data ? { ...local, ...data } : local;
-    } catch (err) {
-      console.warn('Exception in updateReportStatus, using local:', err);
-      return local;
-    }
+    if (!this.isConfigured) return this.fallback.updateReportStatus(id, status, supervisorNotes);
+    const { data, error } = await this.getSupabase()
+      .from('reports')
+      .update({ status, supervisor_notes: supervisorNotes, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as Report;
   }
 
   async bulkSaveReports(newReports: Report[], mode: 'upsert' | 'replace' = 'upsert'): Promise<{ count: number }> {
-    // Always persist to local fallback first so UI updates immediately without lag or failure
-    const fallbackRes = await this.fallback.bulkSaveReports(newReports, mode);
-    if (!this.isConfigured) return fallbackRes;
-
-    try {
-      for (const r of newReports) {
-        await this.saveReport(r);
-      }
-      return { count: newReports.length };
-    } catch (err) {
-      console.warn('Supabase bulkSaveReports exception, using local fallback:', err);
-      return fallbackRes;
+    if (!this.isConfigured) return this.fallback.bulkSaveReports(newReports, mode);
+    for (const r of newReports) {
+      await this.saveReport(r);
     }
+    return { count: newReports.length };
   }
 
   // --- Validation Helpers (delegate to fallback/logic) ---
